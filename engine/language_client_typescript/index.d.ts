@@ -1,10 +1,11 @@
-export { BamlRuntime, FunctionResult, FunctionResultStream, BamlImage as Image, ClientBuilder, BamlAudio as Audio, invoke_runtime_cli, ClientRegistry, BamlLogEvent, } from "./native";
-export { BamlStream } from "./stream";
-export { BamlCtxManager } from "./async_context_vars";
+export { BamlRuntime, FunctionResult, FunctionResultStream, BamlImage as Image, ClientBuilder, BamlAudio as Audio, invoke_runtime_cli, ClientRegistry, BamlLogEvent, } from './native';
+export { BamlStream } from './stream';
+export { BamlCtxManager } from './async_context_vars';
 export declare class BamlClientFinishReasonError extends Error {
     prompt: string;
     raw_output: string;
-    constructor(prompt: string, raw_output: string, message: string);
+    finish_reason?: string;
+    constructor(prompt: string, raw_output: string, message: string, finish_reason?: string);
     toJSON(): string;
     static from(error: Error): BamlClientFinishReasonError | undefined;
 }

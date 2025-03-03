@@ -33,19 +33,19 @@ export type FunctionNames = keyof typeof Actions
 /**
  * Helper type to derive the partial return type for an action.
  */
-type StreamDataType<FunctionName extends FunctionNames> = StreamingServerTypes[FunctionName]
+type StreamDataType<FunctionName extends FunctionNames = FunctionNames> = StreamingServerTypes[FunctionName]
 
 /**
  * Helper type to derive the final return type for an action.
  */
-type FinalDataType<FunctionName extends FunctionNames> = (typeof Actions)[FunctionName] extends (...args: any) => any
+type FinalDataType<FunctionName extends FunctionNames = FunctionNames> = (typeof Actions)[FunctionName] extends (...args: any) => any
   ? Awaited<ReturnType<(typeof Actions)[FunctionName]>>
   : never
 
 /**
  * Configuration options for BAML React hooks.
  */
-export type HookInput<FunctionName extends FunctionNames, Options extends { stream?: boolean } = { stream?: true }> = {
+export type HookInput<FunctionName extends FunctionNames = FunctionNames, Options extends { stream?: boolean } = { stream?: true }> = {
   stream?: Options['stream']
   onStreamData?: Options['stream'] extends false ? never : (response?: StreamDataType<FunctionName>) => void
   onFinalData?: (response?: FinalDataType<FunctionName>) => void
@@ -63,7 +63,7 @@ export type HookStatus<Options extends { stream?: boolean } = { stream?: true }>
 /**
  * Return type for BAML React hooks.
  */
-export type HookOutput<FunctionName extends FunctionNames, Options extends { stream?: boolean } = { stream?: true }> = {
+export type HookOutput<FunctionName extends FunctionNames = FunctionNames, Options extends { stream?: boolean } = { stream?: true }> = {
   data?: Options['stream'] extends false ? FinalDataType<FunctionName> : FinalDataType<FunctionName> | StreamDataType<FunctionName>
   finalData?: FinalDataType<FunctionName>
   streamData?: Options['stream'] extends false ? never : StreamDataType<FunctionName>
@@ -87,7 +87,7 @@ export type HookOutput<FunctionName extends FunctionNames, Options extends { str
  * @param props - The hook props.
  * @returns {boolean} True if the props indicate streaming mode.
  */
-function isStreamingProps<FunctionName extends FunctionNames>(
+function isStreamingProps<FunctionName extends FunctionNames = FunctionNames>(
   props: HookInput<FunctionName, { stream?: boolean }>,
 ): props is HookInput<FunctionName, { stream?: true }> {
   return props.stream !== false
@@ -100,7 +100,7 @@ function isStreamingProps<FunctionName extends FunctionNames>(
  * @param props - The hook props.
  * @returns {boolean} True if the props indicate non‑streaming mode.
  */
-function isNotStreamingProps<FunctionName extends FunctionNames>(
+function isNotStreamingProps<FunctionName extends FunctionNames = FunctionNames>(
   props: HookInput<FunctionName, { stream?: boolean }>,
 ): props is HookInput<FunctionName, { stream: false }> {
   return props.stream === false
@@ -197,7 +197,7 @@ function hookReducer<TPartial, TFinal>(
  * const { data, error, isLoading, mutate } = useBamlAction(StreamingActions.TestAws, { stream: true });
  * ```
  */
- function useBamlAction<FunctionName extends FunctionNames>(
+function useBamlAction<FunctionName extends FunctionNames>(
   action: ServerAction,
   props: HookInput<FunctionName, { stream: false }>,
 ): HookOutput<FunctionName, { stream: false }>

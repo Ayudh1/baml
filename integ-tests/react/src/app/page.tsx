@@ -1,21 +1,27 @@
+'use client'
+
 import { ModeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GithubIcon } from 'lucide-react'
 import Image from 'next/image'
+import { useState } from 'react'
+import { useTellStory } from '../../baml_client/react/hooks'
 import TestClient from '../components/hook-example'
+import { AVAILABLE_HOOKS, type HookType } from '../components/hook-example/hooks'
 
-export default function Home() {
+export function Component() {
+  const tellStory = useTellStory()
+
   return (
     <div className='min-h-screen bg-background'>
       <div className='container mx-auto px-4 py-8'>
         <header className='flex justify-between items-center mb-8'>
           <div className='flex items-center gap-2'>
-            <Image className='dark:invert' src='/next.svg' alt='Next.js logo' width={100} height={20} priority />
-            <span className='text-lg font-mono'>+</span>
-            <span className='text-lg font-bold'>BAML</span>
+            {/* <span className='text-lg font-mono'>+</span> */}
+            {/* <span className='text-lg font-bold'>BAML</span> */}
           </div>
-          <div className='flex items-center gap-4'>
+          {/* <div className='flex items-center gap-4'>
             <Button asChild variant='outline'>
               <a href='https://docs.boundaryml.com' target='_blank' rel='noopener noreferrer'>
                 Documentation
@@ -32,31 +38,41 @@ export default function Home() {
               </a>
             </Button>
             <ModeToggle />
-          </div>
+          </div> */}
         </header>
 
-        <main className='max-w-4xl mx-auto space-y-8'>
-          <div className='text-center space-y-4'>
-            <h1 className='text-4xl font-bold tracking-tight'>BAML + Next.js Integration</h1>
+        <main className='space-y-8'>
+          <div className='text-center space-y-4 justify-center items-center'>
+            <h1 className='text-3xl font-bold tracking-tight flex gap-2 items-center justify-center'>
+              BAML <span className='text-lg font-mono px-2 text-muted-foreground'>+</span>
+              <Image className='dark:invert' src='/next.svg' alt='Next.js logo' width={100} height={20} priority />{' '}
+              {/* Integration */}
+            </h1>
             <p className='text-lg text-muted-foreground'>Select an example below to get started.</p>
-            <div className='w-[200px] mx-auto'>
-              <Select defaultValue='chat'>
-                <SelectTrigger>
-                  <SelectValue placeholder='Select an example' />
+            <div className='w-full max-w-xs mx-auto'>
+              <Select value={selectedHook} onValueChange={(value: HookType) => setSelectedHook(value)}>
+                <SelectTrigger className='h-10 flex justify-between items-center text-left'>
+                  <SelectValue placeholder='Select an example'>{AVAILABLE_HOOKS[selectedHook].name}</SelectValue>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='chat'>Chat Interface</SelectItem>
-                  <SelectItem value='classification'>Text Classification</SelectItem>
-                  <SelectItem value='extraction'>Data Extraction</SelectItem>
-                  <SelectItem value='summarization'>Text Summarization</SelectItem>
+                <SelectContent className='p-0'>
+                  <div className='p-2 space-y-2'>
+                    {(Object.entries(AVAILABLE_HOOKS) as [HookType, (typeof AVAILABLE_HOOKS)[HookType]][]).map(
+                      ([key, config]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className='font-bold'>{config.name}</div>
+                          <p className='text-sm text-muted-foreground data-[state=closed]:hidden data-[state=open]:block'>
+                            {config.description}
+                          </p>
+                        </SelectItem>
+                      ),
+                    )}
+                  </div>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className='flex justify-center gap-4 max-w-xl mx-auto'>
-            <TestClient />
-          </div>
+          <TestClient hookType={selectedHook} />
         </main>
 
         <footer className='mt-16 text-center'>

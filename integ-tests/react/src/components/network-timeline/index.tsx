@@ -142,12 +142,12 @@ function DurationDisplay({
           : totalDuration
 
   return (
-    <div className='flex flex-col items-end text-xs text-muted-foreground'>
-      <span>
+    <div className='flex flex-col md:items-end text-xs text-muted-foreground'>
+      <span className='flex items-center gap-1'>
         Total Duration: {totalDuration === '...' ? '...' : <span className='font-mono'>{totalDuration}</span>}
         {totalDuration !== '...' && 's'}
       </span>
-      <span>
+      <span className='flex items-center gap-1'>
         Time to First Parse:{' '}
         {timeToFirstToken === '...' ? '...' : <span className='font-mono'>{timeToFirstToken}</span>}
         {timeToFirstToken !== '...' && 's'}
@@ -336,10 +336,12 @@ export function NetworkTimeline({
 
   return (
     <div className={cn('gap-4 flex flex-col px-4 py-2 bg-card rounded-lg border', className)}>
-      <div className='flex items-center justify-between'>
-        <div className='flex flex-col items-center gap-1'>
+      <div className='flex flex-col md:flex-row gap-2 md:gap-0 md:items-start justify-between'>
+        <div className='flex md:flex-col items-center md:items-start justify-between w-full md:w-auto gap-1'>
           <h3 className='text-sm font-semibold'>LLM Timeline</h3>
-          <StatusBadge status={hookResult.status} />
+          <div className='w-32'>
+            <StatusBadge status={hookResult.status} />
+          </div>
         </div>
         <DurationDisplay timeline={timeline} isComplete={isComplete} currentTime={currentTime} />
       </div>
@@ -401,7 +403,7 @@ export function NetworkTimeline({
         />
       </div>
       <Separator />
-      <div className='grid grid-cols-5 gap-2 text-xs text-muted-foreground'>
+      <div className='grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-muted-foreground'>
         <BooleanBadge label='IsLoading' value={hookResult.isLoading} />
         <BooleanBadge label='IsPending' value={hookResult.isPending} />
         <BooleanBadge label='IsStreaming' value={hookResult.isStreaming} />

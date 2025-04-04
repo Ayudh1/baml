@@ -38,7 +38,7 @@ struct NodeState {
 /// with just function calls but the recursive one would need 6 parameters which
 /// is pretty ugly.
 pub struct Tarjan<'g, V> {
-    /// Ref to the depdenency graph.
+    /// Ref to the dependency graph.
     graph: &'g Graph<V>,
     /// Node number counter.
     index: usize,
@@ -104,7 +104,53 @@ impl<'g, V: Eq + Ord + Hash + Copy> Tarjan<'g, V> {
         // hash maps and hash sets.
         tarjans.components.sort_by(|a, b| a[0].cmp(&b[0]));
 
-        tarjans.components
+        // Post-process to filter out redundant cycles
+        tarjans.filter_redundant_cycles()
+    }
+
+    /// Filter out cycles that contain other cycles.
+    ///
+    /// For example, if we have [A] and [A, B, C], and A forms a cycle by itself,
+    /// then [A, B, C] is redundant because A already forms its own cycle.
+    fn filter_redundant_cycles(&self) -> Vec<Vec<V>> {
+        if self.components.is_empty() {
+            return vec![];
+        }
+
+        // First, sort cycles by length to ensure we process smaller cycles first
+        let mut sorted_components = self.components.clone();
+        sorted_components.sort_by_key(|cycle| cycle.len());
+
+        // Create a set to track nodes that are already part of a minimal cycle
+        let mut nodes_in_minimal_cycles: HashSet<V> = HashSet::new();
+        let mut filtered_components: Vec<Vec<V>> = Vec::new();
+
+        for cycle in sorted_components {
+            // Check if this cycle contains any node that is already part of a minimal cycle
+            // and that node forms a self-loop
+            let mut is_redundant = false;
+            for &node in &cycle {
+                if nodes_in_minimal_cycles.contains(&node) && self.is_self_loop(node) {
+                    is_redundant = true;
+                    break;
+                }
+            }
+
+            if !is_redundant {
+                // Only add non-redundant cycles
+                for &node in &cycle {
+                    nodes_in_minimal_cycles.insert(node);
+                }
+                filtered_components.push(cycle);
+            }
+        }
+
+        filtered_components
+    }
+
+    /// Check if a node forms a self-loop
+    fn is_self_loop(&self, node: V) -> bool {
+        self.graph[&node].contains(&node)
     }
 
     /// Recursive DFS.
@@ -178,7 +224,7 @@ impl<'g, V: Eq + Ord + Hash + Copy> Tarjan<'g, V> {
 
             // Find index of minimum element in the component.
             //
-            // The cycle path is not computed deterministacally because the
+            // The cycle path is not computed deterministically because the
             // graph is stored in a hash map, so random state will cause the
             // traversal algorithm to start at different nodes each time.
             //
@@ -237,6 +283,53 @@ mod tests {
     }
 
     #[test]
+    fn find_cycles_names() {
+        // Define the graph using a key-value type with string literals
+        let graph_data = [
+            (
+                "ProcessNextStepArgs",
+                vec!["JSONSchemaValue", "Tool", "Message"],
+            ),
+            ("JSONSchemaProperty", vec!["JSONSchemaValue"]),
+            ("Message", vec![]),
+            ("ParameterValue", vec![]),
+            ("Tool", vec!["JSONSchemaValue"]),
+            ("UserCommandQuestion", vec![]),
+            ("Parameter", vec![]),
+            ("UserTool", vec![]),
+            ("ScriptStep", vec!["JSONSchemaValue"]),
+            ("JSONSchemaValue", vec!["JSONSchemaValue"]),
+            ("UserCommandParameter", vec![]),
+            (
+                "StepDescriptionRequest",
+                vec!["JSONSchemaValue", "UserTool", "ScriptStep"],
+            ),
+            ("GetUnstructuredContentArgs", vec![]),
+            ("SummarizedToolExecutionResults", vec!["StructuredResponse"]),
+            ("StructuredResponse", vec![]),
+            ("StepDescriptionResponse", vec![]),
+            ("GetUnstructuredContentResponse", vec![]),
+            ("ToolCall", vec!["ParameterValue"]),
+            ("SummarizeToolExecutionResultsArgs", vec!["Message"]),
+            (
+                "UserCommand",
+                vec!["UserCommandQuestion", "UserCommandParameter"],
+            ),
+            ("ProcessNextStepResponse", vec!["ToolCall"]),
+        ];
+
+        // Transform the key-value type into a HashMap with HashSet
+        let graph = HashMap::from_iter(
+            graph_data
+                .into_iter()
+                .map(|(node, successors)| (node, HashSet::from_iter(successors.into_iter()))),
+        );
+
+        let components = Tarjan::components(&graph);
+        assert_eq!(components, &[&["JSONSchemaValue"]]);
+    }
+
+    #[test]
     fn find_cycles() {
         let graph = graph(&[
             (0, &[1]),
@@ -252,6 +345,41 @@ mod tests {
         assert_eq!(
             Tarjan::components(&graph),
             expected_components(&[&[0, 1, 2], &[3, 4], &[5, 6], &[7]]),
+        );
+    }
+
+    #[test]
+    fn test_redundant_cycle_elimination() {
+        // Set up a graph with a self-loop on node 0 and nodes 1, 2 that reference it
+        let graph = graph(&[
+            (0, &[0]),       // Self-loop
+            (1, &[0]),       // References node 0
+            (2, &[1]),       // References node 1
+            (3, &[1, 0, 2]), // References all previous nodes
+        ]);
+
+        assert_eq!(
+            Tarjan::components(&graph),
+            expected_components(&[&[0]]), // Only the self-loop should be detected
+        );
+    }
+
+    #[test]
+    fn test_complex_cycle_structure() {
+        // Complex cycle structure with multiple interlinked cycles
+        let graph = graph(&[
+            (0, &[0]),    // Self-loop A
+            (1, &[2]),    // B -> C
+            (2, &[3]),    // C -> D 
+            (3, &[1]),    // D -> B (forms cycle B,C,D)
+            (4, &[0, 5]), // E -> A, F
+            (5, &[4]),    // F -> E (forms cycle E,F)
+        ]);
+
+        // Should detect three separate cycles
+        assert_eq!(
+            Tarjan::components(&graph),
+            expected_components(&[&[0], &[1, 2, 3], &[4, 5]]),
         );
     }
 

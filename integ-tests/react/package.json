@@ -16,7 +16,7 @@
     "generate": "baml-cli generate --from ../baml_src"
   },
   "dependencies": {
-    "@boundaryml/baml": "workspace:*",
+    "@boundaryml/baml": "0.83.0",
     "@boundaryml/baml-darwin-arm64": "workspace:*",
     "@boundaryml/baml-nextjs-plugin": "workspace:*",
     "@radix-ui/react-dropdown-menu": "^2.1.4",

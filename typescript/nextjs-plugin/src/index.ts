@@ -41,6 +41,23 @@ export interface BamlNextConfig {
   webpack?: ((config: Configuration, context: any) => Configuration) | null
 }
 
+/**
+ * Modifies the passed in Next.js configuration with automatic baml file loading.
+ *
+ * @param nextConfig A Next.js configuration object, as usually exported in `next.config.js` or `next.config.mjs`.
+ * @returns The modified config to be exported
+ *
+ * @example
+ * ```js
+ * // next.config.mjs
+ * import { withBaml } from '@boundaryml/baml-nextjs-plugin'
+ *
+ * export default withBaml()({
+ *   // Your existing Next.js config here
+ *   reactStrictMode: true,
+ * })
+ * ```
+ */
 export function withBaml(bamlConfig: BamlNextConfig = {}) {
   return function withBamlConfig<T extends GenericNextConfig>(nextConfig: T = {} as T): T {
     const nextVersion = getNextJsVersion()

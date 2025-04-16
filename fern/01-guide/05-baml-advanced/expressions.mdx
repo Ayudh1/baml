@@ -164,3 +164,53 @@ let example_poems = {
  - (B): Another helper variable.
  - (C): The final value of `example_poems` is a `Poems` instance that makes use
    of the two helper variables.
+
+### Evaluation Order
+
+You are probably used to a program running one line at a time, perhaps
+with tools like `async` to allow concurrency. In BAML, although our
+syntax resembles that of a synchronous function, you are actually building
+a workflow. BAML will detect what parts of the function need to be evaluated
+to compute the final result, and will attempt to evaluate LLM calls in
+parallel if they are not dependent on one another.
+
+The BAML VSCode Extension and [online playground](https://promptfiddle.com)
+can help you understand the evaluation schedule of your functions. Just
+write a test for your Workflow function, run it, and watch the various parts
+of your function highlight as they are sent to the LLM provider.
+
+This final example function has a susprising execution order because the
+items in the returned list are in a different order than they are defined
+in their helper variables.
+
+```baml BAML
+fn FourSeasons() -> string[] {
+  let summer = CreateClaudePoem("summer", 10);
+  let fall = CreateClaudePoem("fall", 10);
+  let spring = CreateClaudePoem("spring", 10);
+  let winter = CreateClaudePoem("winter", 10);
+  [winter, spring, summer, fall]
+}
+
+test FourSeasons {
+  functions [FourSeasons]
+  args {}
+}
+```
+
+<Note>
+   Note that the seanons are listed in one order, and defined in another order.
+   The order of evaluation follows the order of the items in the list, not the
+   order that the items are defined.
+
+   You may wonder why these items do not evaluate simultaneously, given that they
+   have no mutual data dependencies. In the future, they will.
+</Note>
+
+[PromptFiddle](https://promptfiddle.com) provides these visual cues as to the
+evaluation order and timing of each LLM call:
+
+<video src="/assets/FourSeasonsGlowingSmall.webm" autoplay="true" loop="true" width="600"></video>
+
+The evaluation cues are useful for getting a sense of your Workflow's timing,
+finding opportunities for optimization, and understanding evaluation order.

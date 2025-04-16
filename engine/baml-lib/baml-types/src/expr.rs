@@ -1,6 +1,7 @@
 // use moniker::{Binder, BoundTerm, Scope, Var};
 use std::collections::HashSet;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use crate::{field_type::FieldType, BamlMap, BamlValueWithMeta};
 use internal_baml_diagnostics::Span;
@@ -503,4 +504,14 @@ impl<T: Clone> Expr<T> {
             ),
         }
     }
+}
+
+pub struct Thunk<T> {
+    pub result: Arc<Mutex<Option<Expr<T>>>>,
+    pub status: ThunkStatus<T>,
+}
+
+pub enum ThunkStatus<T> {
+    Evaluated(Expr<T>),
+    Finished,
 }

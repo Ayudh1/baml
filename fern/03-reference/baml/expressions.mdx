@@ -106,14 +106,78 @@ let fibs = [1,1,2,3,5];
 ### Class Constructors and Spreads
 
 ```baml BAML
+// A normal BAML class.
 class Person {
   name string
   age int
 }
 
+// Use a literal to construct a class.
 let founder_1 = Person { name: "Vaibhav", age: 31 };
+
+// Another instance.
 let founder_2 = Person { name: "Aaron", age: 30 };
 
+// You can specify a subset of the fields literally, and use a field spread
+// to specify the remaining fields as copies of some other instance.
 let founder_2_next_year = Person { age: 30, ..founder_2 };
 ```
 
+### Lists
+
+Lists may contain any other expressions, as long as all elements of the
+list have the same type.
+
+```baml BAML
+let my_poems = ["Whyfor art thou Romeo", MakePoem("cats"), another_poem];
+
+let another_poem = MakePoem("heartbreak");
+```
+
+<Note>
+It is not necessary to define items above the line where they are used. In
+the prior example, we use the value `another_poem` "before" it is defined.
+This is fine.
+</Note>
+
+### Function Calls
+
+The result of calling a function is also an expression. For example, in the previous
+listing:
+
+```baml BAML
+let my_poems = ["Wherefor art thou Romeo", MakePoem("cats"), another_poem];
+//                   This is an expression ^^^^^^^^^^^^^^^^
+
+let another_poem = MakePoem("heartbreak");
+//                 ^^^^^^^^^^^^^^^^^^^^^^ This is an expression 
+```
+
+## Variables
+
+Variables can be used to name an expression, either to use it multiple times,
+or to streamline a larger definition.
+
+Variables in BAML should use `camelCase` (first leter lowercase, first letter of
+each subsequent word uppercase).
+
+BAML variables are lexically scoped. The scope of a top-level variable is the
+the entire BAML environment. Variables defined within curly braces (in a multi-line
+top-level definition, or in a Workflow), are only visible within that block.
+
+
+Unlike top-level definitions, the order of variable definition within a block
+matters. Within a block, you may only use variables defined earlier in that block.
+
+## Evaluation Order
+
+BAML Workflows try not to execute any LLM calls that aren't strictly necessary for evaluating
+your final answer. Although the syntax resembles that of a normal programming language, as a
+workflow engine, we try to optimize the evaluation by rearranging or parallelizing LLM
+calls.
+
+To get clear sense of the evaluation of your Workflow, write a [test](/ref/baml/test) and run it.
+The VSCode extension will highlight the LLM calls as they are being made, allowing
+you to visually trace and profile the workflow.
+
+For more quantititive tracing and logging, check out the upcoming Boundary Studio!

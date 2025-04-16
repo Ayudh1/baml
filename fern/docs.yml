@@ -421,7 +421,7 @@ navigation:
           - page: generator
             path: 03-reference/generator.mdx
           - page: (Experimental) Workflows
-            path: 03-reference/expressions.mdx
+            path: 03-reference/baml/expressions.mdx
       - section: Generated baml_client
         slug: baml_client
         contents:

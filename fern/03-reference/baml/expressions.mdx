@@ -1,0 +1,119 @@
+Workflows are BAML functions whose bodies are expressions that combine
+data from LLM calls, static values, or other Workflows.
+
+<Warning>
+  This is an experimental feature! It has not been tested in production
+  and the syntax is very likely to change in the near future. This is
+  meant to be a tech preview, and is not ready for use in your production
+  apps.
+</Warning>
+
+## Relation to LLM Functions
+
+Workflows are similar to LLM functions - both have a function type signature
+that lists parameters and a return type, and both can be compiled into
+baml_client functions and called from Python/TypeScript/Go etc. Both can
+be used in a `test` block and previewed in the Playground.
+
+They differ in their bodies. While an LLM function contains a single client
+and a single prompt, a Workflow body can contain any expression, including
+literal values, calls to LLM functions, calls to other Workflows, or any
+combination of these.
+
+For example, this Workflow combines two LLMs calls into a final class.
+
+
+```baml BAML
+// A normal BAML class.
+class Poems {
+    openai string
+    claude string
+}
+
+// A Workflow, which can call other LLM functions or Workflows and
+// compose their results.
+fn TwoPoems(topic: string) -> Poems {
+    let poem_length = 10;
+    Poems {
+        openai: CreateGPTPoem(topic, poem_length),
+        claude: CreateClaudePoem(topic, poem_length)
+    }
+}
+
+// The normal BAML functions we have always been able to write.
+function CreateGPTPoem(subject: string, length: int) -> string {
+  client GPT4o
+  prompt #"
+    Please write a {{ length }} line poem about the beauty of {{ subject }}.
+  "#
+}
+
+// The normal BAML functions we have always been able to write.
+function CreateClaudePoem(subject: string, length: int) -> string {
+  client GPT4o
+  prompt #"
+    Please write a {{ length }} line poem about the beauty of {{ subject }}.
+  "#
+}
+```
+
+## Expressions
+
+The following are all expressions. Expressions may not appear at the top level
+of a BAML file, but may be used both (A) in the body of a Workflow function,
+or (B) in top-level variable assignments.
+
+
+### Where expressions can be used
+
+```baml BAML
+let my_birthday = "October 14";
+//                ^^^^^^^^^^^^ An expression in a top-level binding.               
+
+let my_two_poems = {
+  let p1 = CreatePoem("trees");
+  //       ^^^^^^^^^^^^^^^^^^^ An expression in a helper variable
+  //                           within a top-level binding.
+  let p2 = CreatePoem("grass");
+  //       ^^^^^^^^^^^^^^^^^^^ An expression in a helper variable
+  //                           within a top-level binding.
+  [p1, p2]
+  // ^^^^^ A literal list expression.
+}
+
+fn MyWorkflow() -> int {
+  let some_poem = CreatePoem("birds");
+  //              ^^^^^^^^^^^^^^^^^^^ An expression in a helper variable
+  //                                  within a Workflow.
+  LLMScorePoem(some_poem)
+  // ^^^^^^^^^^^^^^^^^^^^ An LLM function call expression within a Workflow.
+}
+
+```
+
+### Literals
+
+Literal values my be used as expressions. Here are examples of literal integer,
+float, string, and list values.
+
+```baml BAML
+let x = 5;
+let y = 5.0;
+let name = "Rose";
+let fibs = [1,1,2,3,5];
+```
+
+### Class Constructors and Spreads
+
+```baml BAML
+class Person {
+  name string
+  age int
+}
+
+let founder_1 = Person { name: "Vaibhav", age: 31 };
+let founder_2 = Person { name: "Aaron", age: 30 };
+
+let founder_2_next_year = Person { age: 30, ..founder_2 };
+```
+

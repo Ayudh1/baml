@@ -166,6 +166,9 @@ navigation:
           - page: Modular API
             icon: fa-regular fa-cubes
             path: 01-guide/05-baml-advanced/modular-api.mdx
+          - page: (Experimental) BAML Workflows
+            icon: fa-regular fa-lambda
+            path: 01-guide/05-baml-advanced/expressions.mdx
       - section: Boundary Cloud
         contents:
           # - section: Functions

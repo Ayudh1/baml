@@ -329,26 +329,41 @@ async fn beta_reduce<'a>(
                     // TODO: There's some code that handles proxy URL extraction
                     // better in baml-lib/llm-client/src/clients/helpers.rs
                     // use that here.
-                    let client = {
-                        let mut client = reqwest::Client::builder();
-
-                        if let Some(proxy_url) = env.runtime.env_vars().get("BOUNDARY_PROXY_URL") {
-                            client = client.default_headers({
-                                let mut headers = reqwest::header::HeaderMap::new();
-                                headers.insert(
-                                    reqwest::header::HeaderName::from_static("baml-original-url"),
-                                    reqwest::header::HeaderValue::from_str(base_url)?,
-                                );
-                                headers
-                            });
-                            base_url = &proxy_url;
-                        }
-
-                        client.build()?
-                    };
+                    let client =
+                        reqwest::Client::builder().redirect(reqwest::redirect::Policy::none());
+                    let mut headers = reqwest::header::HeaderMap::new();
+                    if let Some(proxy_url) = env.runtime.env_vars().get("BOUNDARY_PROXY_URL") {
+                        headers.insert(
+                            reqwest::header::HeaderName::from_static("baml-original-url"),
+                            reqwest::header::HeaderValue::from_str(base_url)?,
+                        );
+                        base_url = proxy_url;
+                    }
+                    let client = client.build()?;
 
                     // TODO: Headers, query params, etc.
-                    let response = client.get(base_url).send().await?;
+                    let mut req = client.get(base_url);
+                    if !headers.is_empty() {
+                        req = req.headers(headers);
+                    }
+
+                    let mut response = req.send().await?;
+
+                    // Redirect (only once, make it loop).
+                    if response.status().is_redirection() {
+                        let location = response.headers().get("location").unwrap();
+                        let mut headers = reqwest::header::HeaderMap::new();
+                        if let Some(proxy_url) = env.runtime.env_vars().get("BOUNDARY_PROXY_URL") {
+                            headers.insert(
+                                reqwest::header::HeaderName::from_static("baml-original-url"),
+                                location.to_owned(),
+                            );
+                            response = client.get(base_url).headers(headers).send().await?;
+                        } else {
+                            response = client.get(location.to_str().unwrap()).send().await?;
+                        }
+                    }
+
                     let body = response.text().await?;
 
                     // TODO: If the lines above fail (? operator) then this

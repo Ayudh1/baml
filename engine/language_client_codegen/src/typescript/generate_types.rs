@@ -4,6 +4,7 @@ use anyhow::Result;
 use itertools::Itertools;
 
 use internal_baml_core::ir::{
+    self,
     repr::{Docstring, IntermediateRepr, Walker},
     ClassWalker, EnumWalker, FieldType, IRHelperExtended,
 };
@@ -24,6 +25,7 @@ pub(crate) struct TypeBuilder<'ir> {
 pub(crate) struct TypescriptTypes<'ir> {
     enums: Vec<TypescriptEnum<'ir>>,
     classes: Vec<TypescriptClass<'ir>>,
+    type_aliases: Vec<TypescriptTypeAlias<'ir>>,
     structural_recursive_alias_cycles: Vec<TypescriptTypeAlias<'ir>>,
 }
 
@@ -78,6 +80,12 @@ impl<'ir> TryFrom<(&'ir IntermediateRepr, &'ir GeneratorArgs)> for TypescriptTyp
             .collect::<Vec<_>>();
         classes.sort_by(|a, b| a.name.cmp(&b.name));
 
+        let mut type_aliases: Vec<TypescriptTypeAlias> = ir
+            .walk_type_aliases()
+            .map(TypescriptTypeAlias::from)
+            .collect::<Vec<_>>();
+        type_aliases.sort_by(|a, b| a.name.cmp(&b.name));
+
         let mut structural_recursive_alias_cycles: Vec<TypescriptTypeAlias> = ir
             .walk_alias_cycles()
             .map(TypescriptTypeAlias::from)
@@ -87,6 +95,7 @@ impl<'ir> TryFrom<(&'ir IntermediateRepr, &'ir GeneratorArgs)> for TypescriptTyp
         Ok(TypescriptTypes {
             enums,
             classes,
+            type_aliases,
             structural_recursive_alias_cycles,
         })
     }
@@ -206,6 +215,20 @@ impl<'ir> From<Walker<'ir, (&'ir String, &'ir FieldType)>> for TypescriptTypeAli
         Self {
             name: Cow::Borrowed(name),
             target: target.to_type_ref(db, false),
+        }
+    }
+}
+
+impl<'ir> From<Walker<'ir, &'ir ir::TypeAlias>> for TypescriptTypeAlias<'ir> {
+    fn from(
+        Walker {
+            ir: db,
+            item: alias,
+        }: Walker<&'ir ir::TypeAlias>,
+    ) -> Self {
+        Self {
+            name: Cow::Borrowed(&alias.elem.name),
+            target: alias.elem.r#type.elem.to_type_ref(db, false),
         }
     }
 }

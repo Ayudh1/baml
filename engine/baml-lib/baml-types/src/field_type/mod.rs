@@ -88,6 +88,7 @@ pub enum FieldType {
     Union(Vec<FieldType>),
     Tuple(Vec<FieldType>),
     Optional(Box<FieldType>),
+    TypeAlias(String),
     RecursiveTypeAlias(String),
     Arrow(Box<Arrow>),
     WithMetadata {
@@ -119,6 +120,7 @@ impl std::fmt::Display for FieldType {
         match self {
             FieldType::Enum(name)
             | FieldType::Class(name)
+            | FieldType::TypeAlias(name)
             | FieldType::RecursiveTypeAlias(name) => write!(f, "{name}"),
             FieldType::Primitive(t) => write!(f, "{t}"),
             FieldType::Literal(v) => write!(f, "{v}"),
@@ -259,9 +261,9 @@ impl FieldType {
                 FieldType::List(inner) => {
                     queue.push(inner);
                 }
-                FieldType::Map(field_type, field_type1) => {
-                    queue.push(field_type);
-                    queue.push(field_type1);
+                FieldType::Map(key_type, value_type) => {
+                    queue.push(key_type);
+                    queue.push(value_type);
                 }
                 FieldType::Union(inner) => {
                     queue.extend(inner.iter());
@@ -272,6 +274,9 @@ impl FieldType {
                 FieldType::Arrow(arrow) => {
                     queue.extend(arrow.param_types.iter());
                     queue.push(&arrow.return_type);
+                }
+                FieldType::TypeAlias(name) => {
+                    deps.insert(name.clone());
                 }
                 FieldType::RecursiveTypeAlias(name) => {
                     deps.insert(name.clone());
@@ -307,8 +312,9 @@ impl ToUnionName for FieldType {
             | FieldType::Literal(_)
             | FieldType::Class(_)
             | FieldType::RecursiveTypeAlias(_)
+            | FieldType::TypeAlias(_)
             | FieldType::Arrow(_) => IndexSet::new(),
-            FieldType::Tuple(inner) => inner.iter().flat_map(|t| t.find_union_types()).collect(),
+            FieldType::Tuple(inner) => inner.iter().flat_map(FieldType::find_union_types).collect(),
             FieldType::Optional(inner) => inner.find_union_types(),
             FieldType::WithMetadata { base, .. } => base.find_union_types(),
         }
@@ -361,7 +367,9 @@ impl ToUnionName for FieldType {
             FieldType::Optional(field_type) => {
                 format!("Optional__{}", field_type.to_union_name())
             }
+            FieldType::TypeAlias(_) => todo!(),
             FieldType::RecursiveTypeAlias(name) => name.to_string(),
+            FieldType::TypeAlias(name) => name.to_string(),
             FieldType::WithMetadata { base, .. } => base.to_union_name(),
             FieldType::Arrow(_) => "function".to_string(),
         }

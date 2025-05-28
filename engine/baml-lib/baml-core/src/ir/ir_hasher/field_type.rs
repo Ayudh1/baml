@@ -91,6 +91,7 @@ impl<'a> InterfaceFieldType<'a> {
             FieldType::RecursiveTypeAlias(name) => {
                 InterfaceFieldType::RecursiveTypeAlias(name.as_str())
             }
+            FieldType::TypeAlias(name) => todo!(),
             FieldType::Arrow(arrow) => InterfaceFieldType::Unknown,
             FieldType::WithMetadata {
                 base,

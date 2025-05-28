@@ -65,6 +65,10 @@ export interface {{cls.name}} {
 {% endfor %}
 
 {#- Type Aliases -#}
+{% for alias in type_aliases %}
+export type {{alias.name}} = {{alias.target}}
+{% endfor %}
+
 {% for alias in structural_recursive_alias_cycles %}
 export type {{alias.name}} = {{alias.target}}
 {% endfor %}

@@ -195,6 +195,7 @@ pub trait IRHelperExtended: IRSemanticStreamingHelper {
             (FieldType::Tuple(_), _) => false,
             (FieldType::Enum(_), _) => false,
             (FieldType::Class(_), _) => false,
+            (FieldType::TypeAlias(_), _) => false,
 
             (FieldType::Arrow(arrow1), FieldType::Arrow(arrow2)) => {
                 let param_lengths_match = arrow1.param_types.len() == arrow2.param_types.len();
@@ -393,6 +394,8 @@ pub trait IRHelperExtended: IRSemanticStreamingHelper {
     }
 
     fn recursive_alias_definition(&self, alias_name: &str) -> Option<&FieldType>;
+
+    fn type_alias_resolution(&self, alias_name: &str) -> Option<&FieldType>;
 
     fn type_has_constraints(&self, field_type: &FieldType) -> bool {
         let (_, constraints) = self.distribute_constraints(field_type);
@@ -862,6 +865,13 @@ impl IRHelperExtended for IntermediateRepr {
             Some(alias)
         } else {
             None
+        }
+    }
+
+    fn type_alias_resolution(&self, alias_name: &str) -> Option<&FieldType> {
+        match self.find_type_alias(alias_name) {
+            Err(_) => None,
+            Ok(alias) => Some(&alias.item.attributes.r#type),
         }
     }
 }

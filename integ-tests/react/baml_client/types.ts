@@ -816,6 +816,48 @@ export interface WithReasoning {
   
 }
 
+export type Amount = Checked<Checked<number,"gt_ten">,"gt_ten">
+
+export type Combination = number | string | boolean | number | string[] | Record<string, string[]>
+
+export type Currency = Checked<number,"gt_ten">
+
+export type Graph = Record<string, string[]>
+
+export type JsonArray = JsonValue[]
+
+export type JsonEntry = SimpleTag | JsonTemplate
+
+export type JsonObject = Record<string, JsonValue>
+
+export type JsonTemplate = Record<string, JsonEntry>
+
+export type JsonValue = number | string | boolean | number | JsonObject | JsonArray
+
+export type LinkedListAlias = LinkedListAliasNode
+
+export type List = string[]
+
+export type MultipleAttrs = Checked<number,"gt_ten">
+
+export type NodeIndirection = NodeWithAliasIndirection
+
+export type Primitive = number | string | boolean | number
+
+export type RecAliasOne = RecAliasTwo
+
+export type RecAliasThree = RecAliasOne[]
+
+export type RecAliasTwo = RecAliasThree
+
+export type RecursiveListAlias = RecursiveListAlias[]
+
+export type RecursiveMapAlias = Record<string, RecursiveMapAlias>
+
+export type RecursiveUnion = string | Record<string, RecursiveUnion>
+
+
+
 export type JsonArray = JsonValue[]
 
 export type JsonEntry = SimpleTag | JsonTemplate

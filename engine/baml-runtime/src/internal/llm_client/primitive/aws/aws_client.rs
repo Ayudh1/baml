@@ -22,7 +22,7 @@ use aws_smithy_runtime_api::{client::result::SdkError, http::Headers};
 use aws_smithy_types::{Blob, Document};
 use baml_ids::HttpRequestId;
 use baml_types::{
-    tracing::events::{HTTPBody, HTTPRequest, HTTPResponse, TraceData, TraceEvent},
+    tracing::events::{ClientDetails, HTTPBody, HTTPRequest, HTTPResponse, TraceData, TraceEvent},
     ApiKeyWithProvenance, BamlMap, BamlMedia, BamlMediaContent, BamlMediaType,
 };
 use futures::stream;
@@ -129,16 +129,23 @@ fn serde_json_to_aws_document(value: serde_json::Value) -> Document {
 struct CollectorInterceptor {
     call_stack: Vec<baml_ids::FunctionCallId>,
     http_request_id: baml_ids::HttpRequestId,
+    client_details: ClientDetails,
 }
 
 impl CollectorInterceptor {
     pub fn new(
         call_stack: Vec<baml_ids::FunctionCallId>,
         http_request_id: baml_ids::HttpRequestId,
+        resolved_properties: &ResolvedAwsBedrock,
     ) -> Self {
         Self {
             call_stack,
             http_request_id,
+            client_details: ClientDetails {
+                name: resolved_properties.model.clone(),
+                provider: "aws".to_string(),
+                options: resolved_properties.client_options(),
+            },
         }
     }
 }
@@ -198,6 +205,7 @@ impl aws_smithy_runtime_api::client::interceptors::Intercept for CollectorInterc
                 response.status().as_u16(),
                 Some(smithy_json_headers(response.headers())),
                 HTTPBody::new(response.body().bytes().unwrap_or_default().to_vec()),
+                self.client_details.clone(),
             );
 
             let event =
@@ -253,6 +261,7 @@ impl AwsClient {
                 provider: client.provider.to_string(),
                 default_role: properties.default_role(),
                 allowed_roles: properties.allowed_roles(),
+                options: properties.client_options(),
             },
             features: ModelFeatures {
                 chat: true,
@@ -277,6 +286,7 @@ impl AwsClient {
                 provider: client.elem().provider.to_string(),
                 default_role: properties.default_role(),
                 allowed_roles: properties.allowed_roles(),
+                options: properties.client_options(),
             },
             features: ModelFeatures {
                 chat: true,
@@ -394,6 +404,7 @@ impl AwsClient {
             .interceptor(CollectorInterceptor::new(
                 call_stack,
                 http_request_id.clone(),
+                &self.properties,
             ))
             .build();
         Ok(BedrockRuntimeClient::from_conf(bedrock_config))
